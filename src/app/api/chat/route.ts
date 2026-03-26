@@ -66,10 +66,12 @@ export async function POST(req: NextRequest) {
         );
       }
       const anthropic = new Anthropic({ apiKey });
-      const anthropicMessages = messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }));
+      const anthropicMessages = messages
+        .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
+        .map((m: { role: string; content: string }) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }));
 
       const stream = anthropic.messages.stream({
         model,
