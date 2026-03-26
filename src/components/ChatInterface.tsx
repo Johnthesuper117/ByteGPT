@@ -26,6 +26,14 @@ export default function ChatInterface() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT) + 'px';
+  }, [input]);
+
   const sendMessage = useCallback(async () => {
     const content = input.trim();
     if (!content || isLoading) return;
@@ -183,11 +191,6 @@ export default function ChatInterface() {
             rows={1}
             className="flex-1 resize-none text-sm p-2 placeholder:text-[var(--terminal-green-dim)] placeholder:opacity-50 disabled:opacity-50"
             style={{ minHeight: '2.5rem', maxHeight: `${MAX_TEXTAREA_HEIGHT}px` }}
-            onInput={(e) => {
-              const el = e.currentTarget;
-              el.style.height = 'auto';
-              el.style.height = Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT) + 'px';
-            }}
           />
           <button
             onClick={sendMessage}

@@ -115,10 +115,13 @@ export async function POST(req: NextRequest) {
         systemInstruction: systemMessage.content,
       });
 
-      const geminiHistory = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }));
+      const geminiHistory = messages
+        .slice(0, -1)
+        .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
+        .map((m: { role: string; content: string }) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
 
       const lastMessage = messages[messages.length - 1];
       const chat = geminiModel.startChat({ history: geminiHistory });
