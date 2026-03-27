@@ -1,7 +1,7 @@
 # ByteGPT
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?style=flat-square&logo=openai)](https://openai.com/)
@@ -29,7 +29,7 @@
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js `^18.18.0`, `^19.8.0`, or `>=20.0.0` (per Next.js 15 requirements)
 - npm 9+
 - API key(s) from one or more providers
 
@@ -119,7 +119,7 @@ src/
 
 ### Other Platforms
 
-ByteGPT is a standard Next.js 14 app and can be deployed anywhere that supports Node.js:
+ByteGPT is a standard Next.js 15 app and can be deployed anywhere that supports Node.js:
 
 ```bash
 npm run build

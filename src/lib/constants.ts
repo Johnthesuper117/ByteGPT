@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pkg = require('../../package.json') as { version: string };
-export const APP_VERSION = `v${pkg.version}`;
+const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION;
+export const APP_VERSION = rawVersion ? `v${rawVersion}` : 'v0.0.0';
 export const MAX_TEXTAREA_HEIGHT = 128;

@@ -5,13 +5,49 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const runtime = 'nodejs';
 
+type MessageInput = { role: string; content: string };
+
+function validateMessages(messages: unknown): MessageInput[] | null {
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+
+  const allowedRoles = new Set(['system', 'user', 'assistant']);
+  let hasUserMessage = false;
+
+  for (const m of messages) {
+    if (
+      !m ||
+      typeof m !== 'object' ||
+      typeof (m as Record<string, unknown>).role !== 'string' ||
+      typeof (m as Record<string, unknown>).content !== 'string' ||
+      !allowedRoles.has((m as MessageInput).role)
+    ) {
+      return null;
+    }
+    if ((m as MessageInput).role === 'user') hasUserMessage = true;
+  }
+
+  if (!hasUserMessage) return null;
+  return messages as MessageInput[];
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { messages, model } = await req.json();
+    const { messages: rawMessages, model } = await req.json();
 
-    if (!messages || !model) {
+    if (!model || typeof model !== 'string') {
       return NextResponse.json(
-        { error: 'Missing required fields: messages and model' },
+        { error: 'Missing required field: model' },
+        { status: 400 }
+      );
+    }
+
+    const messages = validateMessages(rawMessages);
+    if (!messages) {
+      return NextResponse.json(
+        {
+          error:
+            'Invalid messages: expected a non-empty array of { role: system|user|assistant, content: string } objects with at least one user message',
+        },
         { status: 400 }
       );
     }
@@ -32,9 +68,13 @@ export async function POST(req: NextRequest) {
         );
       }
       const openai = new OpenAI({ apiKey });
+      const allowedRoles = new Set(['user', 'assistant']);
+      const sanitizedMessages = messages
+        .filter((m) => allowedRoles.has(m.role))
+        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
       const stream = await openai.chat.completions.create({
         model,
-        messages: [systemMessage, ...messages],
+        messages: [systemMessage, ...sanitizedMessages],
         stream: true,
       });
 
@@ -67,8 +107,8 @@ export async function POST(req: NextRequest) {
       }
       const anthropic = new Anthropic({ apiKey });
       const anthropicMessages = messages
-        .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
-        .map((m: { role: string; content: string }) => ({
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
         }));
@@ -117,15 +157,21 @@ export async function POST(req: NextRequest) {
 
       const geminiHistory = messages
         .slice(0, -1)
-        .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
-        .map((m: { role: string; content: string }) => ({
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
           role: m.role === 'assistant' ? 'model' : 'user',
           parts: [{ text: m.content }],
         }));
 
-      const lastMessage = messages[messages.length - 1];
+      const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+      if (!lastUserMessage) {
+        return NextResponse.json(
+          { error: 'No user message found to send' },
+          { status: 400 }
+        );
+      }
       const chat = geminiModel.startChat({ history: geminiHistory });
-      const result = await chat.sendMessageStream(lastMessage.content);
+      const result = await chat.sendMessageStream(lastUserMessage.content);
 
       const encoder = new TextEncoder();
       const readable = new ReadableStream({

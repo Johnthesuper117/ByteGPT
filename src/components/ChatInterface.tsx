@@ -76,8 +76,20 @@ export default function ChatInterface() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error ?? 'Request failed');
+        const contentType = response.headers.get('content-type') ?? '';
+        const text = await response.text();
+        let errorMessage = 'Request failed';
+        if (contentType.includes('application/json')) {
+          try {
+            const data = JSON.parse(text) as { error?: unknown };
+            if (typeof data.error === 'string') errorMessage = data.error;
+          } catch {
+            if (text) errorMessage = text;
+          }
+        } else if (text) {
+          errorMessage = text;
+        }
+        throw new Error(errorMessage);
       }
 
       const reader = response.body?.getReader();
